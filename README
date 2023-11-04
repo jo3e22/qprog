@@ -128,3 +128,26 @@ Thereafter, xpcontrol_read calls
  A special feature of the relatively simple qprog represented by xpc is that all the variables in the
  sub-object of type ccnumerics are set by copying their counterparts in xpnumerics
  (effectively xpc%clcoef%n=xpc%n), EXCEPT for the PAMS variables including bigobj_formula.
+
+
+Extended Workflow
+-----------------
+
+Using software from the smardda/develop repo, it is possible to begin with variables defined as LaTeX symbols
+(script codvar.bash below) and to set up a GUI interface to producing qprog.ctl input in dialog (todia.bash).
+The file ../develop/codvar_test.txt shows the expected format for codvar.bash input.
+The extended workflow, with the additional commands labelled #EXTRA at end of line, follows:
+
+git clone git@github.com:smardda/qprog.git
+git clone git@github.com:smardda/develop.git #EXTRA
+cd qprog
+#User generates bigobj.txt or bigobj_tex.txt, bigobjtot.txt
+../develop/codvar.bash bigobj_tex.txt; mv bigobj_tex.txt.cod bigobj.txt #EXTRA 
+./qprog.bash -l 
+mv qprog_case0.ctl qprog.ctl
+../develop/todia.bash qcontrol_m.f90 qprog_m.f90 bigobj_m.f90 #EXTRA (<=5 namelists per .f90 file)
+#User edits qprog_m.f90 
+#User edits bigobj_m.f90 ...etc.
+make -f Makefile.qprog
+./qprog.dia  #EXTRA
+./qprog qprog.ctl 
