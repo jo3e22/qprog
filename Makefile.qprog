@@ -16,7 +16,7 @@ DBG=g
 # Fortran compiler flags
 
 #gfortran
-F90FLAGS = -g -fbacktrace -fbounds-check -fexceptions
+F90FLAGS = -g -fbacktrace -fbounds-check -fexceptions -cpp
 #intel fortran
 #F90FLAGS =   -O3 -C
 #F90FLAGS = -debug -debug-parameters all -trace -fpe0 -fp-stack-check -check
