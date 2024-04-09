@@ -35,7 +35,8 @@ MOD=.mod
 #Fortran-77 source
 src = lowor.f isnumb.f
 
-# config file.
+# config file.sprand_case0.log
+> sprand_case0_sprand.out
 
 SOURCES = \
 const_kind_m.f90 \
@@ -47,7 +48,8 @@ clock_m.f90 \
 misc_m.f90 \
 gfile_m.f90 \
 vfile_m.f90 \
-qcontrol_h.f90 \
+qcontrol_h.f90 \sprand_case0.log
+> sprand_case0_sprand.out
 qcontrol_m.f90 \
 bigobj_h.f90 \
 bigobj_m.f90 \
@@ -75,7 +77,15 @@ clean:
 	rm -f $(OBJECTS) *$(MOD) $(EXTRA_CLEAN_FILES)
 
 distclean: clean
-	rm -f $(PROG) 
+	rm -f $(PROG)
+
+cleanqprog: 
+	git rm -f qcontrol_h.f90 qcontrol_m.f90 bigobj_h.f90 bigobj_m.f90 qprog.f90
+	git rm -f qcontrol_h.doc qcontrol_m.doc bigobj_h.doc bigobj_m.doc qprog.doc
+	git rm -f qprog.ctl doxyfile.qprog 
+	rm -f filelist Makefile.1 spaced.txt work.txt setvar.txt namvarinit.txt namvars.txt namvardecl.txt include.txt copvar.txt copvar0.txt
+	git remote remove github
+	chmod a-x qprog.bash
 
 txt:
 	cat Makefile.$(PROG) $(SOURCES) > $(PROG).txt

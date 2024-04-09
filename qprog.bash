@@ -200,3 +200,5 @@ cp Makefile.1  Makefile.$QPROG
 make -f Makefile.$QPROG
 ./$QPROG "$QPROG"_case0.ctl
 # configure Fortran compiler
+# make list of new files
+echo $QPROG.f90 "$Q"control_h.f90 "$Q"control_m.f90 "$QPROG"_m.f90 "$QPROG"_h.f90 "$BIGOBJ"_m.f90 "$BIGOBJ"_h.f90 "$QPROG"_case0.ctl doxyfile Makefile.$QPROG "$QPROG"_case0.log "$QPROG"_case0_"$QPROG".out newfiles.txt > newfiles.txt
