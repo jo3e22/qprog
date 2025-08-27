@@ -74,6 +74,7 @@ doxygen doxyfile
 Other subdirectories
 doc produce latest version of CCFE-R(15)34 from f90 files, see local README
 TEST outputs to compare, plus specialist example .ctl and .dat files setting a .dat file as input
+backups contains timestamped backup copies of overwritten files in the case of qprog.sh being run multiple times
 
 Scratch files output
 setvar.txt copy to internal variables from namelist variables
@@ -128,6 +129,11 @@ Thereafter, xpcontrol_read calls
  A special feature of the relatively simple qprog represented by xpc is that all the variables in the
  sub-object of type ccnumerics are set by copying their counterparts in xpnumerics
  (effectively xpc%clcoef%n=xpc%n), EXCEPT for the PAMS variables including bigobj_formula.
+
+backup_manager.sh
+This is a new feature intended to recover mistakes made while rerunning qprog.sh (which is unadvisable).
+When qprog.sh is run it will overwrite previously generated files.  With this new feature it will now create a backup of the file in *./backups/* with the format `%yy%mm%dd-%hh%mm%ss_<filename.f90>.bak`
+Run `./backup_manager.sh -h` for more information.
 
 
 Extended Workflow
