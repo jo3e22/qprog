@@ -64,23 +64,61 @@ if [ ! -e $QPROG.txt ] ; then cp $SMPROG/qprog.txt $QPROG.txt;fi
 if [ ! -e $BIGOBJ.txt ] ; then cp $SMPROG/bigobj.txt $BIGOBJ.txt;fi
 ## process variables
 #ensure program var file spaced OK
-sed -e "s/ *= */ = /" -e "s/ *:: */ :: /" -e 's/ *!< */ !< /' \
+sed -e "s/ *= */ = /" -e "s/ *:: */ :: /" -e 's/ *!< */ !< /' -e "s/ *dimension/ dimension/" \
 -e "s/^ */  /" < $QPROG.txt  > spaced.txt
 sed \
 -e "s/ /_/g" < spaced.txt | sed -e "s/^__/  /" -e "s/_::_/ :: /" \
-| sed -e 's/_!<_/ !< /' | sed -e "s/_=_/ = /" > work.txt
-awk '{print "     " $1 " " $2 " " $3 " " $6 " " $7}' < work.txt > include.txt
-awk '{print "  " $1 " " $2 " " $7 " " $6 " " $7}' < work.txt > namvardecl.txt
+| sed -e 's/_!<_/ !< /' | sed -e "s/_=_/ = /" | sed -e "s/,_dimension/, dimension/" > work.txt
+awk '{
+  if ($2 ~ /dimension/) {
+    # For dimension arrays: real(kr8),dimension(3) :: varname !< comment
+    print "    " $1 " " $2 " " $3 " " $4 " " $7 " " $8
+  } else {
+    # For regular vars: real(kr8) :: varname = value !< comment  
+    print "    " $1 " " $2 " " $3 " " $6 " " $7
+  }
+}' < work.txt > include.txt
+awk '{
+  if ($2 ~ /dimension/) {
+    print "  " $1 " " $2 " " $3 " " $8 " " $7 " " $8
+  } else {
+    print "  " $1 " " $2 " " $7 " " $6 " " $7
+  }
+}' < work.txt > namvardecl.txt
 vim namvardecl.txt -S namvardecl.ed
-awk '{print " &" $7 ", " "&" }' < work.txt > namvars.txt
-awk '{print "  " $7 " " $4 " " $5 }' < work.txt >namvarinit.txt
-awk '{print "  selfn%" $3 " " $4 " " $7 }' < work.txt > setvar.txt
-awk '{print "  $BOnumerics%" $3 " " $4 " $Qnumerics%" $3 }' < work.txt > copvar0.txt
+awk '{
+  if ($2 ~ /dimension/) {
+    print " & " $8 " , " "&"
+  } else {
+    print " & " $7 " , " "&"
+  }
+}' < work.txt > namvars.txt
+awk '{
+  if ($2 ~ /dimension/) {
+    print "  " $8 " " $5 " " $6
+  } else {
+    print "  " $7 " " $4 " " $5
+  }
+}' < work.txt > namvarinit.txt
+awk '{
+  if ($2 ~ /dimension/) {
+    print "  selfn%" $4 " " $5 " " $8
+  } else {
+    print "  selfn%" $3 " " $4 " " $7
+  }
+}' < work.txt > setvar.txt
+awk '{
+  if ($2 ~ /dimension/) {
+    print "  $BOnumerics%" $4 " " $5 " $Qnumerics%" $4
+  } else {
+    print "  $BOnumerics%" $3 " " $4 " $Qnumerics%" $3
+  }
+}' < work.txt > copvar0.txt
 #echo "  \$BOnumerics%formula = \$Qnumerics%formula" >> copvar0.txt
 echo "  \$BOnumerics%f = \$Qnumerics%f" >> copvar0.txt
 sed -e "s/\$BO/$BO/" -e "s/\$Q/$Q/" < copvar0.txt > copvar.txt
 #space object var file spaced OK
-sed -e "s/ *= */ = /" -e "s/ *:: */ :: /" -e 's/ *!< */ !< /' \
+sed -e "s/ *= */ = /" -e "s/ *:: */ :: /" -e 's/ *!< */ !< /' -e "s/ *dimension/ dimension/" \
 -e "s/^ */     /" < $BIGOBJ.txt  > spaced.txt
 ## process f90 files
 # qprog main file (note qprog is a bigobj)
