@@ -49,6 +49,25 @@ echo "object description = " $BSTR
 # other initialisation
 SMPROG=$(pwd)
 SMDEV=$(pwd)/develop
+
+# Backup function to avoid overwriting existing files
+backup_if_exists() {
+  local file=$1
+  if [ -f "$file" ]; then
+  echo "Backing up existing file: $file"
+    local datetime=$(date +"%Y%m%d-%H%M%S")
+    local backup_dir="backups"
+    local backup_name="${datetime}_${file}.bak"
+    
+    # Create backup directory if it doesn't exist
+    [ ! -d "$backup_dir" ] && mkdir -p "$backup_dir"
+    
+    # Move existing file to backup
+    mv "$file" "$backup_dir/$backup_name"
+    echo "Backed up existing $file to $backup_dir/$backup_name"
+  fi
+}
+
 if [ ! -d $SMDEV ] ; then
   echo "Local directory \$SMDEV=$SMDEV does not exist - trying to use smardda/develop"
   if [[ -z "$HS" ]] ; then
@@ -64,11 +83,13 @@ if [ ! -e $QPROG.txt ] ; then cp $SMPROG/qprog.txt $QPROG.txt;fi
 if [ ! -e $BIGOBJ.txt ] ; then cp $SMPROG/bigobj.txt $BIGOBJ.txt;fi
 ## process variables
 #ensure program var file spaced OK
+#ensure program var file spaced OK
 sed -e "s/ *= */ = /" -e "s/ *:: */ :: /" -e 's/ *!< */ !< /' -e "s/ *dimension/ dimension/" \
 -e "s/^ */  /" < $QPROG.txt  > spaced.txt
 sed \
 -e "s/ /_/g" < spaced.txt | sed -e "s/^__/  /" -e "s/_::_/ :: /" \
 | sed -e 's/_!<_/ !< /' | sed -e "s/_=_/ = /" | sed -e "s/,_dimension/, dimension/" > work.txt
+
 awk '{
   if ($2 ~ /dimension/) {
     # For dimension arrays: real(kr8),dimension(3) :: varname !< comment
@@ -114,14 +135,16 @@ awk '{
     print "  $BOnumerics%" $3 " " $4 " $Qnumerics%" $3
   }
 }' < work.txt > copvar0.txt
+
 #echo "  \$BOnumerics%formula = \$Qnumerics%formula" >> copvar0.txt
 echo "  \$BOnumerics%f = \$Qnumerics%f" >> copvar0.txt
 sed -e "s/\$BO/$BO/" -e "s/\$Q/$Q/" < copvar0.txt > copvar.txt
 #space object var file spaced OK
-sed -e "s/ *= */ = /" -e "s/ *:: */ :: /" -e 's/ *!< */ !< /' -e "s/ *dimension/ dimension/" \
+sed -e "s/ *= */ = /" -e "s/ *:: */ :: /" -e 's/ *!< */ !< /' -e "s/ *dimension/ dimension/g" \
 -e "s/^ */     /" < $BIGOBJ.txt  > spaced.txt
 ## process f90 files
 # qprog main file (note qprog is a bigobj)
+backup_if_exists "$QPROG.f90"
 sed \
 -e "s/qprog/$QPROG/g" \
 -e "13a\  use "$BIGOBJ"_h" \
@@ -135,6 +158,7 @@ sed \
 -e "s/one-line program description/$STR/" \
 < $SMPROG/qprog.f90 > $QPROG.f90
 # control include file
+backup_if_exists "$Q"control_h.f90
 sed \
 -e "s/qprog/$QPROG/g" \
 -e "s/qcontrol_/"$Q"control_/g" \
@@ -144,6 +168,7 @@ sed \
 -e "s/bigobj/$QPROG/g" \
 < $SMPROG/qcontrol_h.f90 > "$Q"control_h.f90
 # control source file
+backup_if_exists "$Q"control_m.f90
 sed \
 -e "s/qprog/$QPROG/g" \
 -e "8a\  use "$BIGOBJ"_h" \
@@ -162,6 +187,7 @@ sed \
 -e "s/bigobj/$QPROG/g" \
 < $SMPROG/qcontrol_m.f90 > "$Q"control_m.f90
 # program source file
+backup_if_exists "$QPROG"_m.f90
 sed \
 -e "191a\  call "$BIGOBJ"_solve(self%$BIGOBJ)" \
 -e "s/bonumerics/"$Q"numerics/g" \
@@ -176,6 +202,7 @@ sed \
 -e "88r namvardecl.txt" \
 < $SMPROG/bigobj_m.f90 > "$QPROG"_m.f90
 #program include file
+backup_if_exists "$QPROG"_h.f90
 sed \
 -e "s/bonumerics/"$Q"numerics/g" \
 -e "s/bigobj/$QPROG/g" \
@@ -185,6 +212,7 @@ sed \
 -e "3a\  use "$BIGOBJ"_h" \
 < $SMPROG/bigobj_h.f90 > "$QPROG"_h.f90
 # object source file, special edits first to tie in with QPROG_m
+backup_if_exists "$BIGOBJ"_m.f90
 sed \
 -e "s/bonumerics/"$BO"numerics/g" \
 -e "s/noutbo/nout$BO/g" \
@@ -192,6 +220,7 @@ sed \
 -e "s/bigobj/$BIGOBJ/g" \
 < $SMPROG/bigobj_m.f90 > "$BIGOBJ"_m.f90
 # object include file
+backup_if_exists "$BIGOBJ"_h.f90
 sed \
 -e "s/bonumerics/"$BO"numerics/g" \
 -e "s/bigobj/$BIGOBJ/g" \
@@ -201,6 +230,7 @@ sed \
 < $SMPROG/bigobj_h.f90 > "$BIGOBJ"_h.f90
 ##process ctl file and set links
 # input file
+backup_if_exists "$QPROG"_case0.ctl
 sed \
 -e "s/qprog/$QPROG/g" \
 -e "s/bigobj/$BIGOBJ/g" \
@@ -218,6 +248,7 @@ sed \
 [ ! -f smitermpi_h.f90 ] && ln -sf $SMALIB_DIR/f95/smitermpi_h.f90
 [ ! -d LIB ] && ln -s  $SMALIB_DIR/fortd LIB
 # produce doxyfile
+backup_if_exists doxyfile
 sed -e "s/QPROG/$QPROG/" < doxyfile.qprog > doxyfile
 # configure Fortran compiler
 if [ ! -f config/config.inc ] ; then
